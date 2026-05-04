@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Productivity Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            /* Relaxed Light Palette */
+            --bg-primary: #f4f7f4; 
+            --card-bg: #ffffff;
+            --widget-inner: #edf1ee; 
+            --text-main: #2d3732; 
+            --accent-teal: #6b9494; 
+        }
+
+        .dark {
+            /* Relaxed Dark Palette (Midnight Sage) */
+            --bg-primary: #1a1f1c; 
+            --card-bg: #242b27;
+            --widget-inner: #2d3631;
+            --text-main: #d1d9d4;
+            --accent-teal: #8fb3b3;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            transition: background-color 0.4s ease, color 0.4s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(100, 120, 110, 0.08);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .dark .glass-card {
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+        }
+
+        .widget-bg {
+            background-color: var(--widget-inner);
+        }
+
+        .accent-gradient {
+            background: linear-gradient(135deg, #6b9494 0%, #517a7a 100%);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="range"] {
+            accent-color: var(--accent-teal);
+            cursor: pointer;
+        }
+
+        .music-progress {
+            height: 4px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dark .music-progress {
+            background: rgba(255,255,255,0.05);
+        }
+        .music-progress-fill {
+            height: 100%;
+            background: var(--accent-teal);
+            width: 0%;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        /* Adjustments for 800px specifically */
+        @media (max-width: 850px) {
+            .grid-cols-12 { grid-template-columns: 1fr; }
+            .lg\:col-span-5, .lg\:col-span-7, .lg\:col-span-12 { grid-column: span 1 / span 1; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6 lg:p-8 min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="max-w-6xl mx-auto flex justify-between items-center mb-8">
+        <h1 class="text-[10px] font-bold tracking-[0.2em] opacity-40 uppercase">Personal Workspace</h1>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleTheme()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-[#2d3631] shadow-sm hover:shadow-md transition-all text-teal-600/70" title="Toggle Theme">
+                <i data-lucide="sun" id="theme-icon-light" class="hidden w-4 h-4"></i>
+                <i data-lucide="moon" id="theme-icon-dark" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleSettings()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-[#2d3631] shadow-sm hover:shadow-md transition-all opacity-70" title="Settings">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        
+        <!-- LEFT COLUMN: Clocks & Weather -->
+        <section class="lg:col-span-5 flex flex-col">
+            <div class="glass-card p-5 h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-[9px] font-bold uppercase tracking-[0.15em] opacity-40">Clocks & Weather</h2>
+                    <div class="flex gap-2 items-center">
+                        <span class="bg-teal-500/10 text-teal-600/80 px-2 py-0.5 rounded-full text-[8px] font-bold tracking-wider">LIVE</span>
+                        <button onclick="refreshWeather()" class="opacity-30 hover:opacity-100 transition-opacity">
+                            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 flex-1">
+                    <!-- Clock 1 -->
+                    <div class="widget-bg rounded-[1.5rem] p-5 text-center border border-black/[0.02] dark:border-white/[0.02] flex flex-col justify-center transition-transform hover:scale-[1.01]">
+                        <p id="clock1-name" class="text-[9px] font-bold uppercase tracking-widest text-teal-600/60 mb-2">Amsterdam</p>
+                        <h3 id="clock1-time" class="text-4xl font-extralight tracking-tight mb-0.5">10:32</h3>
+                        <p id="clock1-date" class="text-[9px] font-medium opacity-30 mb-6">Mon, 4 May</p>
+                        <div class="flex flex-col items-center gap-1.5">
+                            <div class="w-14 h-14 flex items-center justify-center rounded-full bg-black/[0.04] dark:bg-black/20 shadow-sm mb-1">
+                                <i data-lucide="cloud" class="w-8 h-8 text-teal-600"></i>
+                            </div>
+                            <p class="text-xl font-light">15°C</p>
+                            <p class="text-[9px] font-semibold opacity-40 uppercase tracking-tighter">Overcast</p>
+                        </div>
+                    </div>
+                    <!-- Clock 2 -->
+                    <div class="widget-bg rounded-[1.5rem] p-5 text-center border border-black/[0.02] dark:border-white/[0.02] flex flex-col justify-center transition-transform hover:scale-[1.01]">
+                        <p id="clock2-name" class="text-[9px] font-bold uppercase tracking-widest text-teal-600/60 mb-2">Chiang Rai</p>
+                        <h3 id="clock2-time" class="text-4xl font-extralight tracking-tight mb-0.5">15:32</h3>
+                        <p id="clock2-date" class="text-[9px] font-medium opacity-30 mb-6">Mon, 4 May</p>
+                        <div class="flex flex-col items-center gap-1.5">
+                            <div class="w-14 h-14 flex items-center justify-center rounded-full bg-black/[0.04] dark:bg-black/20 shadow-sm mb-1">
+                                <i data-lucide="sun" class="w-8 h-8 text-amber-500"></i>
+                            </div>
+                            <p class="text-xl font-light">31°C</p>
+                            <p class="text-[9px] font-semibold opacity-40 uppercase tracking-tighter">Mainly Clear</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Currency -->
+        <section class="lg:col-span-7">
+            <div class="glass-card overflow-hidden h-full flex flex-col">
+                <!-- Smaller Green Box (Header) -->
+                <div class="accent-gradient p-4 md:p-5 text-white relative">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <h2 class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-70 mb-2">Financial Summary</h2>
+                            <p class="text-[9px] font-medium opacity-60 mb-0.5">EUR → THB RATE</p>
+                            <h3 class="text-3xl md:text-4xl font-extralight tracking-tighter">1€ = 38,12 ฿</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleCalculator()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all backdrop-blur-md" title="Toggle Calculator">
+                                <i data-lucide="eye" id="calc-toggle-icon" class="w-3.5 h-3.5 opacity-80"></i>
+                            </button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all backdrop-blur-md">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 opacity-80"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[9px] font-medium opacity-40 mt-3 relative z-10">Last Sync: 08:56 AM</p>
+                    <i data-lucide="landmark" class="absolute right-[-20px] bottom-[-20px] w-32 h-32 opacity-[0.04] rotate-12"></i>
+                </div>
+                <div id="calculator-body" class="p-6 grid grid-cols-2 gap-4 flex-1 items-center">
+                    <div>
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-2 block tracking-[0.15em]">Hours Worked</label>
+                        <input type="number" id="input-hours" value="11" oninput="calculateEarnings()" class="w-full widget-bg border-none rounded-xl p-3 text-lg font-light outline-none ring-teal-500/10 focus:ring-4 transition-all">
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-2 block tracking-[0.15em]">Hourly Rate (€)</label>
+                        <input type="number" id="input-rate" value="13" oninput="calculateEarnings()" class="w-full widget-bg border-none rounded-xl p-3 text-lg font-light outline-none ring-teal-500/10 focus:ring-4 transition-all">
+                    </div>
+                    <div class="bg-teal-500/5 dark:bg-white/5 p-4 rounded-xl border border-teal-500/10 text-center">
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-1 block tracking-widest">SUBTOTAL (EUR)</label>
+                        <p id="result-eur" class="text-xl font-light text-teal-700/80 dark:text-teal-400/80 tracking-tighter">€ 143,00</p>
+                    </div>
+                    <div class="bg-teal-500/5 dark:bg-white/5 p-4 rounded-xl border border-teal-500/10 text-center">
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-1 block tracking-widest">SUBTOTAL (THB)</label>
+                        <p id="result-thb" class="text-xl font-light text-teal-700/80 dark:text-teal-400/80 tracking-tighter">฿ 5.451</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MIDDLE ROW: MP3 Player -->
+        <section class="lg:col-span-12">
+            <div class="glass-card p-5 lg:p-8 flex flex-col md:flex-row items-center gap-6 lg:gap-10">
+                <div class="flex items-center gap-4 lg:gap-8 flex-1 w-full min-w-0">
+                    <div id="player-disk" class="w-16 h-16 lg:w-20 lg:h-20 widget-bg rounded-2xl lg:rounded-[1.5rem] flex items-center justify-center text-teal-600/50 shadow-inner overflow-hidden flex-shrink-0">
+                        <i data-lucide="music-4" id="player-icon" class="w-8 h-8 lg:w-10 lg:h-10"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="playback-status-dot" class="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            <span id="playback-status-text" class="text-[8px] font-bold uppercase tracking-widest opacity-40">Ready</span>
+                        </div>
+                        <div class="max-w-[150px] sm:max-w-none">
+                            <h3 id="track-title" class="text-sm lg:text-lg font-medium truncate mb-0.5">No file selected</h3>
+                        </div>
+                        <p id="track-index" class="text-[8px] lg:text-[9px] font-semibold opacity-20 uppercase tracking-widest">Select MP3s</p>
+                        
+                        <div class="mt-2 flex items-center gap-2">
+                            <span id="current-time" class="text-[8px] font-mono opacity-40">0:00</span>
+                            <div class="flex-1 music-progress" id="progress-container">
+                                <div class="music-progress-fill" id="progress-fill"></div>
+                            </div>
+                            <span id="duration-time" class="text-[8px] font-mono opacity-40">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between w-full md:w-auto gap-4 lg:gap-8">
+                    <div class="flex items-center gap-3">
+                        <button onclick="prevTrack()" class="opacity-30 hover:opacity-100 transition-opacity"><i data-lucide="rewind" class="w-4 h-4"></i></button>
+                        <button id="play-pause-btn" onclick="togglePlayback()" class="w-10 h-10 lg:w-12 lg:h-12 bg-teal-700/80 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                            <i data-lucide="play" id="play-pause-icon" class="w-4 h-4 lg:w-5 lg:h-5 fill-current"></i>
+                        </button>
+                        <button onclick="nextTrack()" class="opacity-30 hover:opacity-100 transition-opacity"><i data-lucide="fast-forward" class="w-4 h-4"></i></button>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 w-20 lg:w-24">
+                        <i data-lucide="volume-1" class="w-3 h-3 opacity-20 hidden sm:block"></i>
+                        <input type="range" id="volume-control" min="0" max="1" step="0.1" value="0.7" oninput="updateVolume(this.value)" class="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none">
+                    </div>
+
+                    <div class="flex items-center gap-2 opacity-40">
+                        <button onclick="document.getElementById('music-upload').click()" class="p-2 rounded-lg bg-teal-700/10 text-teal-700 hover:scale-105" title="Add MP3">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                        <input type="file" id="music-upload" multiple accept="audio/mp3,audio/mpeg" class="hidden" onchange="handleMusicUpload(event)">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTTOM: Work Schedule -->
+        <section class="lg:col-span-12 mb-6">
+            <div class="glass-card p-6 md:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                    <h2 class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40">Roster & Shifts</h2>
+                    <div class="flex gap-3 items-center">
+                        <label class="cursor-pointer bg-teal-700/80 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-[9px] font-bold flex items-center gap-2 transition-all">
+                            <i data-lucide="file-up" class="w-3 h-3"></i> SYNC CSV
+                            <input type="file" id="csv-input" accept=".csv" class="hidden" onchange="handleCSV(event)">
+                        </label>
+                        <span id="shift-count" class="widget-bg px-3 py-1 rounded-full text-[8px] font-bold opacity-50 border border-black/5 whitespace-nowrap">No Data</span>
+                    </div>
+                </div>
+
+                <div id="today-banner" class="accent-gradient rounded-2xl p-6 text-white mb-8 relative overflow-hidden shadow-lg">
+                    <div class="relative z-10 pr-20">
+                        <p id="today-date-str" class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60 mb-3">CURRENT FOCUS • 04 MAY</p>
+                        <h3 id="today-time-str" class="text-xl md:text-3xl font-extralight mb-2 tracking-tighter">Please Import Data</h3>
+                        <div class="flex items-center gap-2.5 opacity-70">
+                            <i data-lucide="navigation" class="w-3 h-3"></i>
+                            <span id="today-location-str" class="text-[11px] font-medium">Location Pending</span>
+                        </div>
+                    </div>
+                    <div class="absolute right-6 top-6 flex flex-col items-end">
+                        <div class="bg-white/10 backdrop-blur-lg px-3 py-1.5 rounded-xl border border-white/10">
+                            <span id="today-total-hours" class="text-sm font-light flex items-center gap-2">
+                                <i data-lucide="clock-3" class="w-3.5 h-3.5"></i> --h
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Strip - Made scrollable for small widths if needed -->
+                <div class="overflow-x-auto pb-2 -mx-1 px-1">
+                    <div id="calendar-strip" class="flex gap-3 min-w-[650px] sm:min-w-0 sm:grid sm:grid-cols-7 sm:gap-3 mb-10">
+                        <!-- Render days here -->
+                    </div>
+                </div>
+
+                <h4 class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 mb-6">Upcoming Shifts</h4>
+                <div id="upcoming-list" class="space-y-3">
+                    <div class="widget-bg p-6 rounded-2xl border border-black/[0.03] text-center opacity-30">
+                        <p class="text-[11px] italic">Awaiting roster sync...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md hidden p-4">
+        <div class="glass-card w-full max-w-md p-8 shadow-3xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-light tracking-tight">Interface Config</h2>
+                <button onclick="toggleSettings()"><i data-lucide="x" class="w-5 h-5 opacity-40"></i></button>
+            </div>
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-1.5 block">Location 1</label>
+                        <input type="text" id="set-loc1-name" value="Amsterdam" class="w-full widget-bg border-none rounded-lg p-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-bold uppercase opacity-30 mb-1.5 block">Location 2</label>
+                        <input type="text" id="set-loc2-name" value="Chiang Rai" class="w-full widget-bg border-none rounded-lg p-3 text-sm">
+                    </div>
+                </div>
+            </div>
+            <button onclick="saveSettings()" class="w-full bg-teal-700/80 text-white font-bold py-4 rounded-xl mt-8 hover:bg-teal-700 transition-all">
+                COMMIT SETTINGS
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            isDarkMode: false,
+            settings: {
+                loc1: { name: 'Amsterdam', tz: 'Europe/Amsterdam' },
+                loc2: { name: 'Chiang Rai', tz: 'Asia/Bangkok' }
+            },
+            schedule: [],
+            currency: { rate: 38.12 },
+            today: "2026-05-04",
+            music: { playlist: [], currentIndex: -1, audio: new Audio(), isPlaying: false }
+        };
+
+        window.onload = () => {
+            lucide.createIcons();
+            updateClocks();
+            setInterval(updateClocks, 1000);
+            renderCalendar();
+            calculateEarnings();
+            initAudioEvents();
+        };
+
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            document.body.classList.toggle('dark', state.isDarkMode);
+            document.getElementById('theme-icon-light').classList.toggle('hidden', !state.isDarkMode);
+            document.getElementById('theme-icon-dark').classList.toggle('hidden', state.isDarkMode);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('hidden');
+        }
+
+        function toggleCalculator() {
+            const body = document.getElementById('calculator-body');
+            const icon = document.getElementById('calc-toggle-icon');
+            const isHidden = body.classList.toggle('hidden');
+            icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        }
+
+        function saveSettings() {
+            state.settings.loc1.name = document.getElementById('set-loc1-name').value;
+            state.settings.loc2.name = document.getElementById('set-loc2-name').value;
+            document.getElementById('clock1-name').innerText = state.settings.loc1.name;
+            document.getElementById('clock2-name').innerText = state.settings.loc2.name;
+            toggleSettings();
+        }
+
+        function updateClocks() {
+            const now = new Date();
+            const formatTime = (tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+            const formatDate = (tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(now);
+            document.getElementById('clock1-time').innerText = formatTime(state.settings.loc1.tz);
+            document.getElementById('clock1-date').innerText = formatDate(state.settings.loc1.tz);
+            document.getElementById('clock2-time').innerText = formatTime(state.settings.loc2.tz);
+            document.getElementById('clock2-date').innerText = formatDate(state.settings.loc2.tz);
+        }
+
+        function refreshWeather() {
+            const btn = document.querySelector('[onclick="refreshWeather()"]');
+            btn.classList.add('animate-spin');
+            setTimeout(() => btn.classList.remove('animate-spin'), 800);
+        }
+
+        function calculateEarnings() {
+            const h = parseFloat(document.getElementById('input-hours').value) || 0;
+            const r = parseFloat(document.getElementById('input-rate').value) || 0;
+            const eur = h * r;
+            const thb = eur * state.currency.rate;
+            document.getElementById('result-eur').innerText = `€ ${eur.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`;
+            document.getElementById('result-thb').innerText = `฿ ${thb.toLocaleString('de-DE', { maximumFractionDigits: 0 })}`;
+        }
+
+        function initAudioEvents() {
+            const a = state.music.audio;
+            a.volume = 0.7;
+            a.onplay = () => { state.music.isPlaying = true; updateMusicUI(); };
+            a.onpause = () => { state.music.isPlaying = false; updateMusicUI(); };
+            a.onended = () => { nextTrack(); };
+            a.ontimeupdate = () => {
+                const fill = document.getElementById('progress-fill');
+                if (a.duration) {
+                    fill.style.width = `${(a.currentTime / a.duration) * 100}%`;
+                    document.getElementById('current-time').innerText = formatTime(a.currentTime);
+                    document.getElementById('duration-time').innerText = formatTime(a.duration);
+                }
+            };
+            document.getElementById('progress-container').onclick = (e) => {
+                if (!a.duration) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
+            };
+        }
+
+        function formatTime(s) { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
+
+        function handleMusicUpload(e) {
+            Array.from(e.target.files).forEach(file => {
+                state.music.playlist.push({ name: file.name.replace(/\.[^/.]+$/, ""), url: URL.createObjectURL(file) });
+            });
+            if (state.music.currentIndex === -1) playTrack(0);
+            else updateMusicUI();
+        }
+
+        function playTrack(idx) {
+            if (idx < 0 || idx >= state.music.playlist.length) return;
+            state.music.currentIndex = idx;
+            state.music.audio.src = state.music.playlist[idx].url;
+            state.music.audio.play();
+            updateMusicUI();
+        }
+
+        function togglePlayback() {
+            if (state.music.playlist.length === 0) return;
+            if (state.music.isPlaying) state.music.audio.pause();
+            else state.music.audio.play();
+        }
+
+        function nextTrack() { if (state.music.playlist.length > 0) playTrack((state.music.currentIndex + 1) % state.music.playlist.length); }
+        function prevTrack() { if (state.music.playlist.length > 0) playTrack((state.music.currentIndex - 1 + state.music.playlist.length) % state.music.playlist.length); }
+        function updateVolume(v) { state.music.audio.volume = v; }
+
+        function updateMusicUI() {
+            const trackTitle = document.getElementById('track-title');
+            const trackIndex = document.getElementById('track-index');
+            const playPauseIcon = document.getElementById('play-pause-icon');
+            const disk = document.getElementById('player-disk');
+            if (state.music.currentIndex !== -1) {
+                const track = state.music.playlist[state.music.currentIndex];
+                trackTitle.innerText = track.name;
+                trackIndex.innerText = `Track ${state.music.currentIndex + 1} / ${state.music.playlist.length}`;
+                if (state.music.isPlaying) {
+                    playPauseIcon.setAttribute('data-lucide', 'pause');
+                    disk.classList.add('animate-[spin_8s_linear_infinite]');
+                } else {
+                    playPauseIcon.setAttribute('data-lucide', 'play');
+                    disk.classList.remove('animate-[spin_8s_linear_infinite]');
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function handleCSV(e) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const rows = ev.target.result.split('\n').slice(1);
+                const grouped = {};
+                rows.filter(r => r.trim()).forEach(row => {
+                    const p = row.split(',').map(s => s.trim());
+                    if (p.length < 6) return;
+                    const date = p[0]; if (date < state.today) return;
+                    if (!grouped[date]) grouped[date] = { date, segments: [], totalHours: 0, location: p.slice(6).join(', '), dayIndex: (new Date(date).getDay() + 6) % 7 };
+                    grouped[date].segments.push({ start: p[3], end: p[4], duration: parseFloat(p[5]) || 0 });
+                    grouped[date].totalHours += parseFloat(p[5]) || 0;
+                });
+                state.schedule = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+                updateScheduleUI();
+            };
+            reader.readAsText(e.target.files[0]);
+        }
+
+        function updateScheduleUI() {
+            if (state.schedule.length === 0) return;
+            document.getElementById('shift-count').innerText = `${state.schedule.length} Shift Days`;
+            const todayShift = state.schedule.find(s => s.date === state.today);
+            if (todayShift) {
+                document.getElementById('today-date-str').innerText = `CURRENT FOCUS • TODAY, ${todayShift.date}`;
+                document.getElementById('today-time-str').innerText = todayShift.segments.map(s => `${s.start}—${s.end}`).join(' & ');
+                document.getElementById('today-location-str').innerText = todayShift.location;
+                document.getElementById('today-total-hours').innerHTML = `<i data-lucide="clock-3" class="w-3.5 h-3.5 opacity-60"></i> ${todayShift.totalHours}h Total`;
+            }
+            document.getElementById('upcoming-list').innerHTML = state.schedule.map(shift => {
+                const d = new Date(shift.date);
+                return `
+                    <div class="widget-bg p-4 rounded-2xl border border-black/5 flex justify-between items-center group hover:bg-white dark:hover:bg-white/5 transition-all">
+                        <div class="flex items-center gap-4">
+                             <div class="w-10 h-10 bg-white dark:bg-black/20 rounded-xl flex flex-col items-center justify-center text-[8px] font-bold shadow-sm border border-black/5">
+                                <span class="text-teal-600/80 uppercase">${d.toLocaleString('en-US',{month:'short'}).toUpperCase()}</span>
+                                <span class="text-base font-light">${d.getDate()}</span>
+                             </div>
+                             <div>
+                                <p class="text-[8px] font-bold tracking-widest opacity-30 mb-0.5 uppercase">${shift.location}</p>
+                                <h5 class="text-[11px] font-semibold">${shift.segments.map(s => `${s.start}—${s.end}`).join(' & ')}</h5>
+                             </div>
+                        </div>
+                        <div class="bg-teal-700/10 text-teal-700 px-2.5 py-1 rounded-lg text-[8px] font-bold tracking-widest">${shift.totalHours}H</div>
+                    </div>
+                `;
+            }).join('');
+            renderCalendar();
+            lucide.createIcons();
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendar-strip');
+            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+            container.innerHTML = days.map((dayName, i) => {
+                const shift = state.schedule.find(s => s.dayIndex === i && s.date >= state.today);
+                const hrs = shift ? shift.totalHours : 0;
+                return `
+                    <div class="${hrs > 0 ? 'bg-teal-700/10 border-teal-700/20 text-teal-700' : 'widget-bg border-black/5 opacity-40'} flex-1 p-3 rounded-2xl border text-center transition-all hover:scale-[1.03]">
+                        <p class="text-[8px] font-bold opacity-40 mb-1.5 tracking-[0.1em]">${dayName}</p>
+                        <p class="text-xl font-light mb-0.5">${4 + i}</p>
+                        <p class="text-[8px] font-bold opacity-60">${hrs}h</p>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
