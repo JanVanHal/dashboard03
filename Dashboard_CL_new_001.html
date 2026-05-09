@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace Dashboard</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Theme tokens ── */
+:root {
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f7f7f5;
+  --card-bg:       #ffffff;
+  --border-color:  #e9e9e7;
+  --border-strong: #d4d4cf;
+  --text-main:     #37352f;
+  --text-secondary:#6b6b68;
+  --text-muted:    #9b9a97;
+  --accent-blue:   #5645d4;
+  --accent-light:  #ede9fb;
+  --shadow-sm:     0 1px 3px rgba(55,53,47,0.07);
+  --shadow-md:     0 4px 16px rgba(55,53,47,0.10);
+}
+.dark {
+  --bg-primary:    #191919;
+  --bg-secondary:  #222222;
+  --card-bg:       #191919;
+  --border-color:  #2f2f2f;
+  --border-strong: #3d3d3d;
+  --text-main:     #e6e6e3;
+  --text-secondary:#9b9a97;
+  --text-muted:    #6b6b68;
+  --accent-blue:   #7c6ef0;
+  --accent-light:  #26224a;
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.4);
+}
+.dark-lite {
+  --bg-primary:    #2c2c2a;
+  --bg-secondary:  #343431;
+  --card-bg:       #2c2c2a;
+  --border-color:  #424240;
+  --border-strong: #545450;
+  --text-main:     #d8d5ce;
+  --text-secondary:#a09d97;
+  --text-muted:    #706e68;
+  --accent-blue:   #8578f0;
+  --accent-light:  #2e2a52;
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.28);
+}
+
+/* ── Reset / base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  transition: background-color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  padding: 24px;
+  min-height: 100vh;
+}
+@media (min-width: 768px) { body { padding: 40px; } }
+@media (min-width: 1024px) { body { padding: 48px; } }
+button { background: none; border: none; cursor: pointer; color: inherit; font: inherit; }
+input, label { font: inherit; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ── Layout ── */
+.page-wrap { max-width: 1024px; margin: 0 auto; }
+
+/* ── Header ── */
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+.header-brand { display: flex; align-items: center; gap: 8px; }
+.header-brand-emoji { font-size: 1.5rem; }
+.header-nav { display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; }
+.nav-parent { opacity: 0.5; cursor: pointer; }
+.nav-parent:hover { text-decoration: underline; }
+.nav-sep { margin: 0 8px; opacity: 0.3; }
+.nav-current { font-weight: 600; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+@media (min-width: 640px) { .header-actions { gap: 8px; } }
+
+/* ── Main grid ── */
+.main-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 850px) {
+  .main-grid { grid-template-columns: repeat(12, 1fr); }
+  .col-5 { grid-column: span 5; }
+  .col-7 { grid-column: span 7; }
+  .col-12 { grid-column: span 12; }
+}
+
+/* ── Cards ── */
+.notion-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.notion-callout {
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* ── Buttons ── */
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  padding: 0;
+}
+.btn-icon:hover { background: var(--bg-secondary); }
+.btn-icon svg { width: 16px; height: 16px; }
+.btn-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.btn-header:hover { background: var(--bg-secondary); }
+.btn-header svg { width: 16px; height: 16px; }
+
+/* ── Clock section ── */
+.clocks-col { display: flex; flex-direction: column; gap: 24px; }
+.clock-card { padding: 20px; }
+.clock-inner { display: flex; justify-content: space-between; align-items: flex-start; }
+.clock-left { display: flex; flex-direction: column; gap: 4px; }
+.clock-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+.clock-time-row { display: flex; align-items: baseline; gap: 8px; }
+.clock-time { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; }
+.clock-date { font-size: 0.75rem; opacity: 0.4; }
+.clock-weather {
+  text-align: right;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  opacity: 0.8;
+}
+.clock-weather svg { width: 32px; height: 32px; }
+.clock-weather-temp { font-size: 0.875rem; font-weight: 700; display: block; }
+.clock-weather-desc {
+  display: block;
+  font-size: 0.625rem; opacity: 0.6;
+  text-transform: uppercase; font-weight: 500;
+}
+.icon-cloud { color: #60a5fa; }
+.icon-sun { color: #fb923c; }
+
+/* ── Finance section ── */
+.finance-card { padding: 24px; height: 100%; display: flex; flex-direction: column; }
+.finance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.section-title {
+  font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.4;
+}
+.exchange-callout { margin-bottom: 24px; }
+.exchange-label { font-size: 0.75rem; font-weight: 700; opacity: 0.4; text-transform: uppercase; margin-bottom: 4px; }
+.exchange-rate { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+.exchange-sync { font-size: 0.625rem; opacity: 0.4; margin-top: 4px; }
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; align-items: start; }
+.calc-col { display: flex; flex-direction: column; gap: 16px; }
+.calc-field label {
+  display: block; font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; opacity: 0.4; margin-bottom: 4px;
+}
+.calc-input {
+  width: 10ch; background: transparent;
+  border: 1px solid var(--border-color); border-radius: 4px;
+  padding: 8px; font-size: 1.25rem; font-weight: 600;
+  color: var(--text-main); outline: none; transition: border-color 0.2s;
+}
+.calc-input:hover { border-color: var(--text-secondary); }
+.calc-input:focus { border-color: var(--accent-blue); }
+.calc-result-box { background: var(--bg-secondary); border-radius: 4px; padding: 8px; border: 1px solid transparent; }
+.calc-result-val { font-size: 1.25rem; font-weight: 600; color: var(--accent-blue); }
+
+/* ── Music Player ── */
+.player-card { padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+@media (min-width: 768px) { .player-card { flex-direction: row; padding: 24px; gap: 32px; } }
+.player-left { display: flex; align-items: center; gap: 16px; flex: 1; width: 100%; min-width: 0; }
+@media (min-width: 640px) { .player-left { gap: 24px; } }
+.player-disk {
+  width: 48px; height: 48px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); flex-shrink: 0;
+}
+@media (min-width: 640px) { .player-disk { width: 56px; height: 56px; } }
+.player-disk svg { width: 24px; height: 24px; }
+.player-info { flex: 1; min-width: 0; }
+.player-track-title {
+  font-size: 0.875rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3; margin-bottom: 4px;
+}
+@media (min-width: 640px) { .player-track-title { font-size: 1rem; } }
+.player-track-index { font-size: 0.625rem; opacity: 0.4; font-family: monospace; }
+.player-progress-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+@media (min-width: 640px) { .player-progress-row { gap: 12px; } }
+.player-time { font-size: 0.625rem; font-family: monospace; opacity: 0.4; width: 32px; }
+.music-progress { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; cursor: pointer; position: relative; }
+.music-progress-fill { height: 100%; background: var(--text-main); width: 0%; border-radius: 3px; transition: width 0.1s linear; }
+.player-right {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 24px; width: 100%;
+}
+@media (min-width: 768px) { .player-right { justify-content: flex-end; width: auto; gap: 32px; } }
+.player-controls { display: flex; align-items: center; gap: 12px; }
+@media (min-width: 640px) { .player-controls { gap: 16px; } }
+.btn-skip { opacity: 0.4; transition: opacity 0.2s; }
+.btn-skip:hover { opacity: 1; }
+.btn-skip svg { width: 16px; height: 16px; }
+@media (min-width: 640px) { .btn-skip svg { width: 20px; height: 20px; } }
+.btn-play {
+  width: 40px; height: 40px;
+  background: var(--text-main); color: var(--bg-primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+@media (min-width: 640px) { .btn-play { width: 48px; height: 48px; } }
+.btn-play:hover { transform: scale(1.05); }
+.btn-play svg { width: 16px; height: 16px; fill: currentColor; }
+@media (min-width: 640px) { .btn-play svg { width: 20px; height: 20px; } }
+.player-volume { display: none; align-items: center; gap: 8px; width: 80px; }
+@media (min-width: 640px) { .player-volume { display: flex; } }
+@media (min-width: 768px) { .player-volume { width: 96px; } }
+.player-volume svg { width: 14px; height: 14px; opacity: 0.3; }
+.volume-slider {
+  flex: 1; height: 4px; background: var(--border-color);
+  border-radius: 8px; appearance: none; cursor: pointer; outline: none;
+}
+.volume-slider::-webkit-slider-thumb {
+  appearance: none; width: 12px; height: 12px;
+  background: var(--text-main); border-radius: 50%;
+}
+.btn-add-track { border: 1px solid var(--border-color); }
+
+/* ── Schedule section ── */
+.schedule-card { padding: 16px; margin-bottom: 24px; }
+@media (min-width: 640px) { .schedule-card { padding: 24px; } }
+@media (min-width: 768px) { .schedule-card { padding: 32px; } }
+.schedule-header { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+@media (min-width: 640px) {
+  .schedule-header { flex-direction: row; justify-content: space-between; align-items: center; }
+}
+.schedule-header-left { display: flex; align-items: center; gap: 12px; }
+.shift-count-badge {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 0.625rem; font-weight: 700;
+  color: var(--text-secondary); text-transform: uppercase;
+}
+.schedule-header-right { display: flex; align-items: center; gap: 4px; }
+.today-banner { border: 1px solid var(--border-color); margin-bottom: 24px; }
+.today-banner-inner { flex: 1; }
+.today-label {
+  font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; opacity: 0.4; letter-spacing: 0.12em; margin-bottom: 4px;
+}
+.today-time { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+@media (min-width: 640px) { .today-time { font-size: 1.5rem; } }
+.today-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 12px; }
+.today-meta-item { font-size: 0.75rem; font-weight: 500; opacity: 0.6; display: flex; align-items: center; gap: 4px; }
+.today-meta-item svg { width: 12px; height: 12px; }
+
+/* Calendar strip */
+.calendar-wrap { margin-bottom: 24px; }
+.calendar-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+@media (min-width: 640px) { .calendar-strip { gap: 8px; } }
+.cal-day {
+  padding: 8px 4px;
+  border-radius: 4px; border: 1px solid var(--border-color);
+  text-align: center;
+  transition: background 0.2s, border-color 0.2s;
+  min-width: 0;
+}
+.cal-day.has-shift { background: var(--accent-light); border-color: var(--accent-blue); color: var(--accent-blue); }
+.dark .cal-day.has-shift { background: var(--accent-light); }
+.dark-lite .cal-day.has-shift { background: var(--accent-light); }
+.cal-day.no-shift { opacity: 0.4; }
+.cal-day.is-today { outline: 2px solid var(--accent-blue); outline-offset: 1px; }
+.cal-day-name {
+  font-size: 0.5rem; font-weight: 700; opacity: 0.5;
+  margin-bottom: 4px; letter-spacing: 0.1em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-day-num { font-size: 0.875rem; font-weight: 700; }
+@media (min-width: 640px) { .cal-day-num { font-size: 1rem; } }
+.cal-day-hours { font-size: 0.5rem; font-weight: 700; opacity: 0.8; }
+
+/* Upcoming list */
+.upcoming-list-header {
+  font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.4; margin-bottom: 16px;
+}
+.upcoming-list { display: flex; flex-direction: column; gap: 8px; }
+.shift-row {
+  border-radius: 8px; padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid var(--border-color); background: var(--card-bg);
+  transition: background 0.2s;
+}
+.shift-row:hover { background: var(--bg-secondary); }
+.shift-row-left { display: flex; align-items: center; gap: 16px; }
+.shift-date-box {
+  width: 40px; height: 40px;
+  border: 1px solid var(--border-color); border-radius: 4px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 0.5625rem; font-weight: 700; background: var(--card-bg); flex-shrink: 0;
+}
+.shift-date-month { color: var(--text-secondary); text-transform: uppercase; }
+.shift-date-day { font-size: 1rem; font-weight: 700; }
+.shift-location {
+  font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--text-secondary); text-transform: uppercase; margin-bottom: 2px;
+}
+.shift-time { font-size: 0.75rem; font-weight: 600; }
+.shift-hours-pill {
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  padding: 4px 8px; border-radius: 4px;
+  font-size: 0.625rem; font-weight: 700;
+}
+.empty-state {
+  padding: 24px; border: 1px dashed var(--border-color); border-radius: 8px;
+  text-align: center; opacity: 0.4; font-size: 0.75rem; font-style: italic;
+}
+
+/* ── Settings Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(55,53,47,0.35); backdrop-filter: blur(4px); padding: 16px;
+}
+.dark .modal-overlay, .dark-lite .modal-overlay { background: rgba(0,0,0,0.6); }
+.modal-overlay.hidden { display: none; }
+.modal-box {
+  width: 100%; max-width: 448px; padding: 32px;
+  box-shadow: var(--shadow-md);
+  background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+.modal-title { font-size: 1.125rem; font-weight: 700; }
+.modal-body { display: flex; flex-direction: column; gap: 24px; }
+.modal-field label {
+  display: block; font-size: 0.625rem; font-weight: 700;
+  text-transform: uppercase; opacity: 0.4; margin-bottom: 8px;
+}
+.modal-input {
+  width: 100%; background: var(--bg-secondary);
+  border: 1px solid var(--border-color); border-radius: 4px;
+  padding: 8px; font-size: 0.875rem; color: var(--text-main); outline: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--accent-blue); }
+.btn-save {
+  display: block; width: 100%;
+  background: var(--text-main); color: var(--bg-primary);
+  font-weight: 700; padding: 12px; border-radius: 4px; margin-top: 40px;
+  font-size: 0.875rem; transition: opacity 0.2s; cursor: pointer; border: none;
+}
+.btn-save:hover { opacity: 0.85; }
+.dark .btn-save { background: var(--text-main); color: var(--bg-primary); }
+.dark-lite .btn-save { background: var(--text-main); color: var(--bg-primary); }
+
+/* ── Utilities ── */
+.hidden { display: none !important; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.8s linear; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-brand">
+      <nav class="header-nav">
+        <span class="nav-parent">Workspace</span>
+        <span class="nav-sep">/</span>
+        <span class="nav-current">Dashboard</span>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <button onclick="refreshAll()" class="btn-header" title="Refresh Dashboard">
+        <i data-lucide="refresh-cw" id="global-refresh-icon"></i>
+      </button>
+      <button onclick="toggleTheme()" class="btn-header" title="Switch Theme">
+        <i data-lucide="sun" id="theme-icon"></i>
+      </button>
+      <button onclick="toggleSettings()" class="btn-header">
+        <i data-lucide="settings-2"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    <!-- LEFT: Clocks -->
+    <section class="col-5 clocks-col">
+      <div class="notion-card clock-card">
+        <div class="clock-inner">
+          <div class="clock-left">
+            <span id="clock1-name" class="clock-label">Amsterdam</span>
+            <div class="clock-time-row">
+              <h3 id="clock1-time" class="clock-time">10:32</h3>
+              <p id="clock1-date" class="clock-date">Mon, 4 May</p>
+            </div>
+          </div>
+          <div class="clock-weather">
+            <i data-lucide="cloud" class="icon-cloud"></i>
+            <div>
+              <span class="clock-weather-temp">15°C</span>
+              <span class="clock-weather-desc">Overcast</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="notion-card clock-card">
+        <div class="clock-inner">
+          <div class="clock-left">
+            <span id="clock2-name" class="clock-label">Chiang Rai</span>
+            <div class="clock-time-row">
+              <h3 id="clock2-time" class="clock-time">15:32</h3>
+              <p id="clock2-date" class="clock-date">Mon, 4 May</p>
+            </div>
+          </div>
+          <div class="clock-weather">
+            <i data-lucide="sun" class="icon-sun"></i>
+            <div>
+              <span class="clock-weather-temp">31°C</span>
+              <span class="clock-weather-desc">Mainly Clear</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Finance -->
+    <section class="col-7">
+      <div class="notion-card finance-card">
+        <div class="finance-header">
+          <h2 class="section-title">Finance &amp; Rates</h2>
+          <button onclick="toggleCalculator()" class="btn-icon" title="Toggle Details">
+            <i data-lucide="eye" id="calc-toggle-icon" style="opacity:0.6"></i>
+          </button>
+        </div>
+        <div class="notion-callout exchange-callout">
+          <div>
+            <p class="exchange-label">Exchange Rate</p>
+            <h3 id="exchange-rate-display" class="exchange-rate">1€ = 38,12 ฿</h3>
+            <p id="sync-time" class="exchange-sync">Last synced 08:56 AM</p>
+          </div>
+        </div>
+        <div id="calculator-body" class="calc-grid">
+          <div class="calc-col">
+            <div class="calc-field">
+              <label>Hours Worked</label>
+              <input type="number" id="input-hours" value="11" oninput="calculateEarnings()" class="calc-input">
+            </div>
+            <div class="calc-field">
+              <label>Hourly Rate (€)</label>
+              <input type="number" id="input-rate" value="13" oninput="calculateEarnings()" class="calc-input">
+            </div>
+          </div>
+          <div class="calc-col">
+            <div class="calc-field">
+              <label>Subtotal (EUR)</label>
+              <div class="calc-result-box">
+                <p id="result-eur" class="calc-result-val">€ 143,00</p>
+              </div>
+            </div>
+            <div class="calc-field">
+              <label>Subtotal (THB)</label>
+              <div class="calc-result-box">
+                <p id="result-thb" class="calc-result-val">฿ 5.451</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MP3 Player -->
+    <section class="col-12">
+      <div class="notion-card player-card">
+        <div class="player-left">
+          <div id="player-disk" class="player-disk">
+            <i data-lucide="music" id="player-icon"></i>
+          </div>
+          <div class="player-info">
+            <h3 id="track-title" class="player-track-title">No file selected</h3>
+            <p id="track-index" class="player-track-index">0 / 0</p>
+            <div class="player-progress-row">
+              <span id="current-time" class="player-time">0:00</span>
+              <div class="music-progress" id="progress-container">
+                <div class="music-progress-fill" id="progress-fill"></div>
+              </div>
+              <span id="duration-time" class="player-time" style="text-align:right">0:00</span>
+            </div>
+          </div>
+        </div>
+        <div class="player-right">
+          <div class="player-controls">
+            <button onclick="prevTrack()" class="btn-skip">
+              <i data-lucide="skip-back"></i>
+            </button>
+            <button id="play-pause-btn" onclick="togglePlayback()" class="btn-play">
+              <i data-lucide="play" id="play-pause-icon"></i>
+            </button>
+            <button onclick="nextTrack()" class="btn-skip">
+              <i data-lucide="skip-forward"></i>
+            </button>
+          </div>
+          <div class="player-volume">
+            <i data-lucide="volume-2"></i>
+            <input type="range" id="volume-control" min="0" max="1" step="0.1" value="0.7"
+              oninput="updateVolume(this.value)" class="volume-slider">
+          </div>
+          <button onclick="document.getElementById('music-upload').click()"
+            class="btn-icon btn-add-track" title="Add Track">
+            <i data-lucide="plus" style="opacity:0.7"></i>
+          </button>
+          <input type="file" id="music-upload" multiple accept="audio/mp3,audio/mpeg"
+            class="hidden" onchange="handleMusicUpload(event)">
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule -->
+    <section class="col-12">
+      <div class="notion-card schedule-card">
+        <div class="schedule-header">
+          <div class="schedule-header-left">
+            <h2 class="section-title">Schedule</h2>
+            <span id="shift-count" class="shift-count-badge">0 Days</span>
+          </div>
+          <div class="schedule-header-right">
+            <label class="btn-icon" title="Sync CSV" style="cursor:pointer">
+              <i data-lucide="upload-cloud" style="opacity:0.6"></i>
+              <input type="file" id="csv-input" accept=".csv" class="hidden" onchange="handleCSV(event)">
+            </label>
+            <button onclick="toggleScheduleList()" class="btn-icon" title="Toggle List">
+              <i data-lucide="eye" id="schedule-toggle-icon" style="opacity:0.6"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="today-banner" class="notion-callout today-banner">
+          <div class="today-banner-inner">
+            <p id="today-date-str" class="today-label">Today</p>
+            <h3 id="today-time-str" class="today-time">Please Import CSV Data</h3>
+            <div class="today-meta">
+              <span id="today-location-str" class="today-meta-item">
+                <i data-lucide="map-pin"></i> Location
+              </span>
+              <span id="today-total-hours" class="today-meta-item">
+                <i data-lucide="clock"></i> --h
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="calendar-wrap">
+          <div id="calendar-strip" class="calendar-strip"></div>
+        </div>
+
+        <div id="upcoming-section-header">
+          <h4 class="upcoming-list-header">Upcoming List</h4>
+        </div>
+        <div id="upcoming-list" class="upcoming-list">
+          <div class="empty-state">
+            <p>Awaiting CSV synchronization...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Preferences</h2>
+      <button onclick="toggleSettings()" class="btn-icon">
+        <i data-lucide="x" style="opacity:0.4"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label>Location 1</label>
+        <input type="text" id="set-loc1-name" value="Amsterdam" class="modal-input">
+      </div>
+      <div class="modal-field">
+        <label>Location 2</label>
+        <input type="text" id="set-loc2-name" value="Chiang Rai" class="modal-input">
+      </div>
+    </div>
+    <button onclick="saveSettings()" class="btn-save">Save</button>
+  </div>
+</div>
+
+<script>
+let state = {
+  theme: 'light',
+  settings: {
+    loc1: { name: 'Amsterdam', tz: 'Europe/Amsterdam' },
+    loc2: { name: 'Chiang Rai', tz: 'Asia/Bangkok' }
+  },
+  schedule: [],
+  currency: { rate: 38.12 },
+  today: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
+  music: { playlist: [], currentIndex: -1, audio: new Audio(), isPlaying: false }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  updateClocks();
+  setInterval(updateClocks, 1000);
+  renderCalendar();
+  calculateEarnings();
+  initAudioEvents();
+});
+
+function toggleTheme() {
+  const body = document.body;
+  const icon = document.getElementById('theme-icon');
+  if (state.theme === 'light') {
+    state.theme = 'dark-lite';
+    body.classList.add('dark-lite');
+    body.classList.remove('dark');
+    icon.setAttribute('data-lucide', 'cloud-moon');
+  } else if (state.theme === 'dark-lite') {
+    state.theme = 'dark';
+    body.classList.add('dark');
+    body.classList.remove('dark-lite');
+    icon.setAttribute('data-lucide', 'moon');
+  } else {
+    state.theme = 'light';
+    body.classList.remove('dark', 'dark-lite');
+    icon.setAttribute('data-lucide', 'sun');
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (state.schedule.length > 0) updateScheduleUI();
+}
+
+function toggleSettings() {
+  document.getElementById('settings-modal').classList.toggle('hidden');
+}
+
+function toggleCalculator() {
+  const body = document.getElementById('calculator-body');
+  const icon = document.getElementById('calc-toggle-icon');
+  const isHidden = body.classList.toggle('hidden');
+  icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function toggleScheduleList() {
+  const list = document.getElementById('upcoming-list');
+  const header = document.getElementById('upcoming-section-header');
+  const icon = document.getElementById('schedule-toggle-icon');
+  const isHidden = list.classList.toggle('hidden');
+  header.classList.toggle('hidden', isHidden);
+  icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function saveSettings() {
+  state.settings.loc1.name = document.getElementById('set-loc1-name').value;
+  state.settings.loc2.name = document.getElementById('set-loc2-name').value;
+  document.getElementById('clock1-name').innerText = state.settings.loc1.name;
+  document.getElementById('clock2-name').innerText = state.settings.loc2.name;
+  toggleSettings();
+}
+
+function updateClocks() {
+  const now = new Date();
+  const fmt = (tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  const fmtD = (tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(now);
+  document.getElementById('clock1-time').innerText = fmt(state.settings.loc1.tz);
+  document.getElementById('clock1-date').innerText = fmtD(state.settings.loc1.tz);
+  document.getElementById('clock2-time').innerText = fmt(state.settings.loc2.tz);
+  document.getElementById('clock2-date').innerText = fmtD(state.settings.loc2.tz);
+}
+
+function refreshAll() {
+  const icon = document.getElementById('global-refresh-icon');
+  icon.classList.add('animate-spin');
+  updateClocks();
+  const now = new Date();
+  document.getElementById('sync-time').innerText = `Last synced ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  state.currency.rate = parseFloat((38.12 + (Math.random() * 0.1 - 0.05)).toFixed(2));
+  document.getElementById('exchange-rate-display').innerText = `1€ = ${state.currency.rate.toString().replace('.', ',')} ฿`;
+  calculateEarnings();
+  setTimeout(() => icon.classList.remove('animate-spin'), 800);
+}
+
+function calculateEarnings() {
+  const h = parseFloat(document.getElementById('input-hours').value) || 0;
+  const r = parseFloat(document.getElementById('input-rate').value) || 0;
+  const eur = h * r;
+  const thb = eur * state.currency.rate;
+  document.getElementById('result-eur').innerText = `€ ${eur.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`;
+  document.getElementById('result-thb').innerText = `฿ ${thb.toLocaleString('de-DE', { maximumFractionDigits: 0 })}`;
+}
+
+function initAudioEvents() {
+  const a = state.music.audio;
+  a.volume = 0.7;
+  a.onplay = () => { state.music.isPlaying = true; updateMusicUI(); };
+  a.onpause = () => { state.music.isPlaying = false; updateMusicUI(); };
+  a.onended = () => { nextTrack(); };
+  a.ontimeupdate = () => {
+    const fill = document.getElementById('progress-fill');
+    if (a.duration) {
+      fill.style.width = `${(a.currentTime / a.duration) * 100}%`;
+      document.getElementById('current-time').innerText = formatTime(a.currentTime);
+      document.getElementById('duration-time').innerText = formatTime(a.duration);
+    }
+  };
+  document.getElementById('progress-container').onclick = (e) => {
+    if (!a.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    a.currentTime = ((e.clientX - rect.left) / rect.width) * a.duration;
+  };
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+function handleMusicUpload(event) {
+  Array.from(event.target.files).forEach(file => {
+    state.music.playlist.push({ name: file.name.replace(/\.[^/.]+$/, ""), url: URL.createObjectURL(file) });
+  });
+  if (state.music.currentIndex === -1) playTrack(0);
+  else updateMusicUI();
+}
+
+function playTrack(idx) {
+  if (idx < 0 || idx >= state.music.playlist.length) return;
+  state.music.currentIndex = idx;
+  state.music.audio.src = state.music.playlist[idx].url;
+  state.music.audio.play();
+  updateMusicUI();
+}
+
+function togglePlayback() {
+  if (state.music.playlist.length === 0) return;
+  state.music.isPlaying ? state.music.audio.pause() : state.music.audio.play();
+}
+
+function nextTrack() { if (state.music.playlist.length > 0) playTrack((state.music.currentIndex + 1) % state.music.playlist.length); }
+function prevTrack() { if (state.music.playlist.length > 0) playTrack((state.music.currentIndex - 1 + state.music.playlist.length) % state.music.playlist.length); }
+function updateVolume(v) { state.music.audio.volume = v; }
+
+function updateMusicUI() {
+  const icon = document.getElementById('play-pause-icon');
+  if (state.music.currentIndex !== -1) {
+    const track = state.music.playlist[state.music.currentIndex];
+    document.getElementById('track-title').innerText = track.name;
+    document.getElementById('track-index').innerText = `${state.music.currentIndex + 1} / ${state.music.playlist.length}`;
+    icon.setAttribute('data-lucide', state.music.isPlaying ? 'pause' : 'play');
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function parseCSVRow(row) {
+  // Handles quoted fields and commas inside values (e.g. "Brussels, Belgium")
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function calcHours(start, end) {
+  // e.g. "08:00" to "13:00" = 5h; handles overnight by adding 24h if end < start
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins < 0) mins += 24 * 60;
+  return Math.round(mins / 60 * 100) / 100;
+}
+
+function handleCSV(e) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    // Format: Date, Day, Start Time, End Time, Title, Location
+    const lines = ev.target.result.split('\n');
+    const grouped = {};
+    lines.slice(1).filter(r => r.trim()).forEach(row => {
+      const p = parseCSVRow(row);
+      if (p.length < 6) return;
+      const date     = p[0];  // YYYY-MM-DD
+      const start    = p[2];  // HH:MM
+      const end      = p[3];  // HH:MM
+      const location = p[5];  // "Brussels, Belgium"
+      if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return;
+      if (date < state.today) return;
+      const duration = calcHours(start, end);
+      if (!grouped[date]) grouped[date] = { date, segments: [], totalHours: 0, location };
+      grouped[date].segments.push({ start, end, duration });
+      grouped[date].totalHours = Math.round((grouped[date].totalHours + duration) * 100) / 100;
+    });
+    state.schedule = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+    updateScheduleUI();
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+function updateScheduleUI() {
+  if (state.schedule.length === 0) return;
+  document.getElementById('shift-count').innerText = `${state.schedule.length} Days`;
+  const todayShift = state.schedule.find(s => s.date === state.today);
+  if (todayShift) {
+    document.getElementById('today-date-str').innerText = `Today • ${todayShift.date}`;
+    document.getElementById('today-time-str').innerText = todayShift.segments.map(s => `${s.start}—${s.end}`).join(' & ');
+    document.getElementById('today-location-str').innerText = todayShift.location;
+    document.getElementById('today-total-hours').innerHTML = `<i data-lucide="clock"></i> ${todayShift.totalHours}h Total`;
+  }
+  document.getElementById('upcoming-list').innerHTML = state.schedule.map(shift => {
+    const d = new Date(shift.date);
+    return `
+      <div class="shift-row">
+        <div class="shift-row-left">
+          <div class="shift-date-box">
+            <span class="shift-date-month">${d.toLocaleString('en-US', { month: 'short' })}</span>
+            <span class="shift-date-day">${d.getDate()}</span>
+          </div>
+          <div>
+            <p class="shift-location">${shift.location}</p>
+            <h5 class="shift-time">${shift.segments.map(s => `${s.start}—${s.end}`).join(' & ')}</h5>
+          </div>
+        </div>
+        <div class="shift-hours-pill">${shift.totalHours}H</div>
+      </div>
+    `;
+  }).join('');
+  renderCalendar();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderCalendar() {
+  const container = document.getElementById('calendar-strip');
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  const now = new Date();
+  const jsDay = now.getDay();
+  const mondayOffset = (jsDay === 0 ? -6 : 1 - jsDay);
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  container.innerHTML = days.map((name, i) => {
+    const dayDate = new Date(monday);
+    dayDate.setDate(monday.getDate() + i);
+    const dateStr = dayDate.toLocaleDateString('en-CA');
+    const isToday = dateStr === state.today;
+    const s = state.schedule.find(shift => shift.date === dateStr);
+    const h = s ? s.totalHours : 0;
+    const classes = ['cal-day', h > 0 ? 'has-shift' : 'no-shift', isToday ? 'is-today' : ''].filter(Boolean).join(' ');
+    return `
+      <div class="${classes}">
+        <p class="cal-day-name">${name}</p>
+        <p class="cal-day-num">${dayDate.getDate()}</p>
+        <p class="cal-day-hours">${h > 0 ? h + 'h' : '—'}</p>
+      </div>
+    `;
+  }).join('');
+}
+</script>
+</body>
+</html>
