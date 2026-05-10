@@ -813,16 +813,16 @@ function calcHours(start, end) {
 function handleCSV(e) {
   const reader = new FileReader();
   reader.onload = (ev) => {
-    // Format: Date, Day, Start Time, End Time, Title, Location
+    // Format: Date, Day, Shift Name, Start Time, End Time, Duration (hours), Location
     const lines = ev.target.result.split('\n');
     const grouped = {};
     lines.slice(1).filter(r => r.trim()).forEach(row => {
       const p = parseCSVRow(row);
-      if (p.length < 6) return;
+      if (p.length < 7) return;
       const date     = p[0];  // YYYY-MM-DD
-      const start    = p[2];  // HH:MM
-      const end      = p[3];  // HH:MM
-      const location = p[5];  // "Brussels, Belgium"
+      const start    = p[3];  // HH:MM
+      const end      = p[4];  // HH:MM
+      const location = p[6];  // "Brussels  Belgium"
       if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return;
       if (date < state.today) return;
       const duration = calcHours(start, end);
