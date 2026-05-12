@@ -424,10 +424,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
             </div>
           </div>
           <div class="clock-weather">
-            <i data-lucide="cloud" class="icon-cloud"></i>
+            <i id="weather1-icon" data-lucide="cloud" class="icon-cloud"></i>
             <div>
-              <span class="clock-weather-temp">15°C</span>
-              <span class="clock-weather-desc">Overcast</span>
+              <span id="weather1-temp" class="clock-weather-temp">—°C</span>
+              <span id="weather1-desc" class="clock-weather-desc">Loading…</span>
             </div>
           </div>
         </div>
@@ -443,10 +443,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
             </div>
           </div>
           <div class="clock-weather">
-            <i data-lucide="sun" class="icon-sun"></i>
+            <i id="weather2-icon" data-lucide="sun" class="icon-sun"></i>
             <div>
-              <span class="clock-weather-temp">31°C</span>
-              <span class="clock-weather-desc">Mainly Clear</span>
+              <span id="weather2-temp" class="clock-weather-temp">—°C</span>
+              <span id="weather2-desc" class="clock-weather-desc">Loading…</span>
             </div>
           </div>
         </div>
@@ -638,6 +638,10 @@ window.addEventListener('DOMContentLoaded', () => {
   renderCalendar();
   calculateEarnings();
   initAudioEvents();
+  fetchWeather();
+  fetchExchangeRate();
+  // Auto-refresh every 15 minutes
+  setInterval(() => { fetchWeather(); fetchExchangeRate(); }, 15 * 60 * 1000);
 });
 
 function toggleTheme() {
@@ -706,12 +710,67 @@ function refreshAll() {
   const icon = document.getElementById('global-refresh-icon');
   icon.classList.add('animate-spin');
   updateClocks();
-  const now = new Date();
-  document.getElementById('sync-time').innerText = `Last synced ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-  state.currency.rate = parseFloat((38.12 + (Math.random() * 0.1 - 0.05)).toFixed(2));
-  document.getElementById('exchange-rate-display').innerText = `1€ = ${state.currency.rate.toString().replace('.', ',')} ฿`;
-  calculateEarnings();
-  setTimeout(() => icon.classList.remove('animate-spin'), 800);
+  fetchWeather();
+  fetchExchangeRate();
+  setTimeout(() => icon.classList.remove('animate-spin'), 1200);
+}
+
+// Open-Meteo: no API key needed
+const WEATHER_LOCATIONS = [
+  { lat: 52.37, lon: 4.90, tempEl: 'weather1-temp', descEl: 'weather1-desc', iconEl: 'weather1-icon', colorClass: 'icon-cloud' },
+  { lat: 19.91, lon: 99.83, tempEl: 'weather2-temp', descEl: 'weather2-desc', iconEl: 'weather2-icon', colorClass: 'icon-sun'  }
+];
+
+function wmoCodesToDesc(code) {
+  if (code === 0)               return ['sun',         'Clear',        'icon-sun'];
+  if (code <= 2)                return ['cloud-sun',   'Partly Cloudy','icon-sun'];
+  if (code === 3)               return ['cloud',       'Overcast',     'icon-cloud'];
+  if (code <= 49)               return ['cloud-drizzle','Fog / Mist',  'icon-cloud'];
+  if (code <= 55)               return ['cloud-drizzle','Drizzle',     'icon-cloud'];
+  if (code <= 65)               return ['cloud-rain',  'Rain',         'icon-cloud'];
+  if (code <= 77)               return ['snowflake',   'Snow',         'icon-cloud'];
+  if (code <= 82)               return ['cloud-rain',  'Showers',      'icon-cloud'];
+  return                               ['cloud-lightning','Thunderstorm','icon-cloud'];
+}
+
+async function fetchWeather() {
+  for (const loc of WEATHER_LOCATIONS) {
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code&temperature_unit=celsius`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      const code = data.current.weather_code;
+      const [lucideIcon, desc, colorClass] = wmoCodesToDesc(code);
+      document.getElementById(loc.tempEl).innerText = `${temp}°C`;
+      document.getElementById(loc.descEl).innerText = desc;
+      const el = document.getElementById(loc.iconEl);
+      el.setAttribute('data-lucide', lucideIcon);
+      el.className = colorClass;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+      document.getElementById(loc.descEl).innerText = 'Unavailable';
+    }
+  }
+}
+
+// open.er-api.com (same source as Earnings Pro)
+async function fetchExchangeRate() {
+  try {
+    const res  = await fetch('https://open.er-api.com/v6/latest/EUR');
+    const data = await res.json();
+    if (data && data.rates && data.rates.THB) {
+      state.currency.rate = parseFloat(data.rates.THB.toFixed(2));
+      document.getElementById('exchange-rate-display').innerText =
+        `1€ = ${state.currency.rate.toFixed(2).replace('.', ',')} ฿`;
+      const now = new Date();
+      document.getElementById('sync-time').innerText =
+        `Last synced ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      calculateEarnings();
+    }
+  } catch (e) {
+    document.getElementById('sync-time').innerText = 'Rate fetch failed';
+  }
 }
 
 function calculateEarnings() {
