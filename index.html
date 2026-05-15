@@ -354,7 +354,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 .dark .modal-overlay, .dark-lite .modal-overlay { background: rgba(0,0,0,0.6); }
 .modal-overlay.hidden { display: none; }
 .modal-box {
-  width: 100%; max-width: 448px; padding: 32px;
+  width: 100%; max-width: 520px; padding: 32px;
   box-shadow: var(--shadow-md);
   background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px;
 }
@@ -605,13 +605,76 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
       </button>
     </div>
     <div class="modal-body">
-      <div class="modal-field">
-        <label>Location 1</label>
-        <input type="text" id="set-loc1-name" value="Amsterdam" class="modal-input">
+      <!-- Location 1 -->
+      <div>
+        <p style="font-size:0.625rem;font-weight:700;text-transform:uppercase;opacity:0.4;letter-spacing:0.1em;margin-bottom:12px">Location 1</p>
+        <div class="modal-field" style="margin-bottom:10px">
+          <label>Search city</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="set-loc1-search" class="modal-input" placeholder="e.g. Amsterdam"
+              onkeydown="if(event.key==='Enter')geocodeCity(1)"
+              style="flex:1">
+            <button onclick="geocodeCity(1)" class="btn-icon btn-add-track" style="flex-shrink:0;width:36px;height:36px;border-radius:4px" title="Look up city">
+              <i data-lucide="search" id="geo1-icon"></i>
+            </button>
+          </div>
+          <p id="geo1-status" style="font-size:0.625rem;margin-top:6px;opacity:0.5;min-height:14px"></p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="modal-field">
+            <label>Name</label>
+            <input type="text" id="set-loc1-name" class="modal-input" style="width:100%">
+          </div>
+          <div class="modal-field">
+            <label>Latitude</label>
+            <input type="number" id="set-loc1-lat" step="0.01" class="modal-input" style="width:100%">
+          </div>
+          <div class="modal-field">
+            <label>Longitude</label>
+            <input type="number" id="set-loc1-lon" step="0.01" class="modal-input" style="width:100%">
+          </div>
+        </div>
+        <div class="modal-field" style="margin-top:8px">
+          <label>Timezone</label>
+          <input type="text" id="set-loc1-tz" class="modal-input" placeholder="e.g. Europe/Amsterdam">
+        </div>
       </div>
-      <div class="modal-field">
-        <label>Location 2</label>
-        <input type="text" id="set-loc2-name" value="Chiang Rai" class="modal-input">
+
+      <div style="border-top:1px solid var(--border-color);margin:4px 0"></div>
+
+      <!-- Location 2 -->
+      <div>
+        <p style="font-size:0.625rem;font-weight:700;text-transform:uppercase;opacity:0.4;letter-spacing:0.1em;margin-bottom:12px">Location 2</p>
+        <div class="modal-field" style="margin-bottom:10px">
+          <label>Search city</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="set-loc2-search" class="modal-input" placeholder="e.g. Chiang Rai"
+              onkeydown="if(event.key==='Enter')geocodeCity(2)"
+              style="flex:1">
+            <button onclick="geocodeCity(2)" class="btn-icon btn-add-track" style="flex-shrink:0;width:36px;height:36px;border-radius:4px" title="Look up city">
+              <i data-lucide="search" id="geo2-icon"></i>
+            </button>
+          </div>
+          <p id="geo2-status" style="font-size:0.625rem;margin-top:6px;opacity:0.5;min-height:14px"></p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="modal-field">
+            <label>Name</label>
+            <input type="text" id="set-loc2-name" class="modal-input" style="width:100%">
+          </div>
+          <div class="modal-field">
+            <label>Latitude</label>
+            <input type="number" id="set-loc2-lat" step="0.01" class="modal-input" style="width:100%">
+          </div>
+          <div class="modal-field">
+            <label>Longitude</label>
+            <input type="number" id="set-loc2-lon" step="0.01" class="modal-input" style="width:100%">
+          </div>
+        </div>
+        <div class="modal-field" style="margin-top:8px">
+          <label>Timezone</label>
+          <input type="text" id="set-loc2-tz" class="modal-input" placeholder="e.g. Asia/Bangkok">
+        </div>
       </div>
     </div>
     <button onclick="saveSettings()" class="btn-save">Save</button>
@@ -622,8 +685,8 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 let state = {
   theme: 'light',
   settings: {
-    loc1: { name: 'Amsterdam', tz: 'Europe/Amsterdam' },
-    loc2: { name: 'Chiang Rai', tz: 'Asia/Bangkok' }
+    loc1: { name: 'Amsterdam',  tz: 'Europe/Amsterdam', lat: 52.37, lon:  4.90 },
+    loc2: { name: 'Chiang Rai', tz: 'Asia/Bangkok',     lat: 19.91, lon: 99.83 }
   },
   schedule: [],
   currency: { rate: 38.12 },
@@ -667,7 +730,54 @@ function toggleTheme() {
 }
 
 function toggleSettings() {
-  document.getElementById('settings-modal').classList.toggle('hidden');
+  const modal = document.getElementById('settings-modal');
+  const isOpening = modal.classList.contains('hidden');
+  if (isOpening) {
+    // Populate fields from current state before showing
+    document.getElementById('set-loc1-name').value = state.settings.loc1.name;
+    document.getElementById('set-loc1-tz').value   = state.settings.loc1.tz;
+    document.getElementById('set-loc1-lat').value  = state.settings.loc1.lat;
+    document.getElementById('set-loc1-lon').value  = state.settings.loc1.lon;
+    document.getElementById('set-loc2-name').value = state.settings.loc2.name;
+    document.getElementById('set-loc2-tz').value   = state.settings.loc2.tz;
+    document.getElementById('set-loc2-lat').value  = state.settings.loc2.lat;
+    document.getElementById('set-loc2-lon').value  = state.settings.loc2.lon;
+  }
+  modal.classList.toggle('hidden');
+}
+
+async function geocodeCity(n) {
+  const searchEl  = document.getElementById(`set-loc${n}-search`);
+  const statusEl  = document.getElementById(`geo${n}-status`);
+  const iconEl    = document.getElementById(`geo${n}-icon`);
+  const query = searchEl.value.trim();
+  if (!query) return;
+
+  iconEl.setAttribute('data-lucide', 'loader');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  statusEl.textContent = 'Searching…';
+
+  try {
+    const res  = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      statusEl.textContent = 'City not found — try a different spelling.';
+      iconEl.setAttribute('data-lucide', 'search');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      return;
+    }
+    const r = data.results[0];
+    document.getElementById(`set-loc${n}-name`).value = r.name;
+    document.getElementById(`set-loc${n}-lat`).value  = r.latitude;
+    document.getElementById(`set-loc${n}-lon`).value  = r.longitude;
+    document.getElementById(`set-loc${n}-tz`).value   = r.timezone || '';
+    const country = r.country ? `, ${r.country}` : '';
+    statusEl.textContent = `✓ ${r.name}${country} — ${r.latitude}, ${r.longitude}`;
+  } catch (e) {
+    statusEl.textContent = 'Lookup failed — check your connection.';
+  }
+  iconEl.setAttribute('data-lucide', 'search');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function toggleCalculator() {
@@ -689,10 +799,21 @@ function toggleScheduleList() {
 }
 
 function saveSettings() {
-  state.settings.loc1.name = document.getElementById('set-loc1-name').value;
-  state.settings.loc2.name = document.getElementById('set-loc2-name').value;
+  // Loc 1
+  state.settings.loc1.name = document.getElementById('set-loc1-name').value.trim() || state.settings.loc1.name;
+  state.settings.loc1.tz   = document.getElementById('set-loc1-tz').value.trim()   || state.settings.loc1.tz;
+  state.settings.loc1.lat  = parseFloat(document.getElementById('set-loc1-lat').value) || state.settings.loc1.lat;
+  state.settings.loc1.lon  = parseFloat(document.getElementById('set-loc1-lon').value) || state.settings.loc1.lon;
+  // Loc 2
+  state.settings.loc2.name = document.getElementById('set-loc2-name').value.trim() || state.settings.loc2.name;
+  state.settings.loc2.tz   = document.getElementById('set-loc2-tz').value.trim()   || state.settings.loc2.tz;
+  state.settings.loc2.lat  = parseFloat(document.getElementById('set-loc2-lat').value) || state.settings.loc2.lat;
+  state.settings.loc2.lon  = parseFloat(document.getElementById('set-loc2-lon').value) || state.settings.loc2.lon;
+  // Update clock labels immediately
   document.getElementById('clock1-name').innerText = state.settings.loc1.name;
   document.getElementById('clock2-name').innerText = state.settings.loc2.name;
+  // Re-fetch weather with new coordinates
+  fetchWeather();
   toggleSettings();
 }
 
@@ -715,11 +836,14 @@ function refreshAll() {
   setTimeout(() => icon.classList.remove('animate-spin'), 1200);
 }
 
-// Open-Meteo: no API key needed
-const WEATHER_LOCATIONS = [
-  { lat: 52.37, lon: 4.90, tempEl: 'weather1-temp', descEl: 'weather1-desc', iconEl: 'weather1-icon', colorClass: 'icon-cloud' },
-  { lat: 19.91, lon: 99.83, tempEl: 'weather2-temp', descEl: 'weather2-desc', iconEl: 'weather2-icon', colorClass: 'icon-sun'  }
-];
+// Open-Meteo: no API key needed — coords kept on state so saveSettings() can update them
+// (WEATHER_LOCATIONS is a live reference into state for fetchWeather to read)
+function getWeatherLocations() {
+  return [
+    { lat: state.settings.loc1.lat, lon: state.settings.loc1.lon, tempEl: 'weather1-temp', descEl: 'weather1-desc', iconEl: 'weather1-icon', colorClass: 'icon-cloud' },
+    { lat: state.settings.loc2.lat, lon: state.settings.loc2.lon, tempEl: 'weather2-temp', descEl: 'weather2-desc', iconEl: 'weather2-icon', colorClass: 'icon-sun'  }
+  ];
+}
 
 function wmoCodesToDesc(code) {
   if (code === 0)               return ['sun',         'Clear',        'icon-sun'];
@@ -734,7 +858,7 @@ function wmoCodesToDesc(code) {
 }
 
 async function fetchWeather() {
-  for (const loc of WEATHER_LOCATIONS) {
+  for (const loc of getWeatherLocations()) {
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code&temperature_unit=celsius`;
       const res  = await fetch(url);
