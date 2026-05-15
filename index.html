@@ -695,6 +695,26 @@ let state = {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
+  // Restore persisted settings
+  try {
+    const savedSettings = localStorage.getItem('dashboard_settings');
+    if (savedSettings) {
+      const s = JSON.parse(savedSettings);
+      state.settings = { ...state.settings, ...s };
+      document.getElementById('clock1-name').innerText = state.settings.loc1.name;
+      document.getElementById('clock2-name').innerText = state.settings.loc2.name;
+    }
+  } catch(e) {}
+
+  // Restore persisted schedule (drop past dates on restore)
+  try {
+    const savedSchedule = localStorage.getItem('dashboard_schedule');
+    if (savedSchedule) {
+      state.schedule = JSON.parse(savedSchedule).filter(s => s.date >= state.today);
+      if (state.schedule.length > 0) updateScheduleUI();
+    }
+  } catch(e) {}
+
   if (typeof lucide !== 'undefined') lucide.createIcons();
   updateClocks();
   setInterval(updateClocks, 1000);
@@ -814,6 +834,7 @@ function saveSettings() {
   document.getElementById('clock2-name').innerText = state.settings.loc2.name;
   // Re-fetch weather with new coordinates
   fetchWeather();
+  localStorage.setItem('dashboard_settings', JSON.stringify(state.settings));
   toggleSettings();
 }
 
@@ -1014,6 +1035,7 @@ function handleCSV(e) {
       grouped[date].totalHours = Math.round((grouped[date].totalHours + duration) * 100) / 100;
     });
     state.schedule = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+    localStorage.setItem('dashboard_schedule', JSON.stringify(state.schedule));
     updateScheduleUI();
   };
   reader.readAsText(e.target.files[0]);
