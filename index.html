@@ -1017,28 +1017,96 @@ function calcHours(start, end) {
 function handleCSV(e) {
   const reader = new FileReader();
   reader.onload = (ev) => {
-    // Format: Date, Day, Shift Name, Start Time, End Time, Duration (hours), Location
-    const lines = ev.target.result.split('\n');
+    const text = ev.target.result;
     const grouped = {};
-    lines.slice(1).filter(r => r.trim()).forEach(row => {
-      const p = parseCSVRow(row);
-      if (p.length < 6) return;
-      const date     = p[0];  // YYYY-MM-DD
-      const start    = p[2];  // HH:MM
-      const end      = p[3];  // HH:MM
-      const location = p[5];  // "Brussels, Belgium"
-      if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return;
-      if (date < state.today) return;
-      const duration = calcHours(start, end);
-      if (!grouped[date]) grouped[date] = { date, segments: [], totalHours: 0, location };
-      grouped[date].segments.push({ start, end, duration });
-      grouped[date].totalHours = Math.round((grouped[date].totalHours + duration) * 100) / 100;
+    
+    // Split header row from data: first line is "MONDAY,TUESDAY,...SUNDAY"
+    const firstNewline = text.indexOf('\n');
+    if (firstNewline === -1) return;
+    
+    const dataText = text.substring(firstNewline + 1);
+    
+    // Parse CSV cells from data section
+    const cells = [];
+    let currentCell = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < dataText.length; i++) {
+      const ch = dataText[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        // Cell boundary
+        if (currentCell.trim()) cells.push(currentCell.trim());
+        currentCell = '';
+      } else {
+        currentCell += ch;
+      }
+    }
+    if (currentCell.trim()) cells.push(currentCell.trim());
+    
+    // Process each cell
+    cells.forEach(cellContent => {
+      // Split by newlines to extract date and shifts
+      const lines = cellContent.split(/\n+/).map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) return;
+      
+      // First line should contain date (e.g., "1 Jun")
+      const dateStr = lines[0];
+      if (!dateStr.match(/^\d{1,2}\s+\w{3}/)) return;
+      
+      // Second line should be time range
+      const timeLine = lines[1];
+      const timeMatch = timeLine.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+      
+      if (timeMatch) {
+        const startTime = parseTime12to24(timeMatch[1]);
+        const endTime = parseTime12to24(timeMatch[2]);
+        
+        // Convert date string to YYYY-MM-DD
+        const dateObj = parseDateString(dateStr);
+        const dateIso = dateObj.toLocaleDateString('en-CA');
+        
+        if (dateIso >= state.today) {
+          const duration = calcHours(startTime, endTime);
+          if (!grouped[dateIso]) {
+            grouped[dateIso] = { date: dateIso, segments: [], totalHours: 0, location: 'Brussels, Belgium' };
+          }
+          grouped[dateIso].segments.push({ start: startTime, end: endTime, duration });
+          grouped[dateIso].totalHours = Math.round((grouped[dateIso].totalHours + duration) * 100) / 100;
+        }
+      }
     });
+    
     state.schedule = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
     localStorage.setItem('dashboard_schedule', JSON.stringify(state.schedule));
     updateScheduleUI();
   };
   reader.readAsText(e.target.files[0]);
+}
+
+function parseTime12to24(time12) {
+  // Convert "8:00 AM" or "2:00 PM" to "08:00" or "14:00"
+  const match = time12.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return '00:00';
+  let [_, h, m, ampm] = match;
+  h = parseInt(h);
+  if (ampm.toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${m}`;
+}
+
+function parseDateString(dateStr) {
+  // Parse "1 Jun" or "15 Jun" to Date object
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const [day, month] = dateStr.split(/\s+/);
+  const date = new Date(`${month} ${day}, ${currentYear}`);
+  // If parsed date is in the past and we're late in the year, try next year
+  if (date < now && now.getMonth() > date.getMonth()) {
+    date.setFullYear(currentYear + 1);
+  }
+  return date;
 }
 
 function updateScheduleUI() {
